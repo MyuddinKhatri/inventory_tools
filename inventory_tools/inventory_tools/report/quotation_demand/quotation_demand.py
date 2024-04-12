@@ -125,55 +125,42 @@ def get_columns():
 
 
 @frappe.whitelist()
-def create(company, warehouse, filters, rows):
+def create(company, filters, rows):
 	filters = frappe._dict(json.loads(filters)) if isinstance(filters, str) else filters
-	rows = json.loads(rows) if isinstance(rows, str) else rows
+	rows = [frappe._dict(r) for r in json.loads(rows)] if isinstance(rows, str) else rows
 	if not rows:
 		return
 
 	counter = 0
+	settings = frappe.get_doc("Inventory Tools Settings", company)
+	requesting_companies = list({row.company for row in rows})
+	if settings.sales_order_aggregation_company == company:
+		requesting_companies = [company]
 
-	for customer, _rows in groupby(rows, lambda x: x.get("customer")):
-		rows = list(_rows)
-
-		if company:
-			print("PASA")
+	for requesting_company in requesting_companies:
+		for customer, _rows in groupby(rows, lambda x: x.get("customer")):
+			rows = list(_rows)
 			so = frappe.new_doc("Sales Order")
-			so.transaction_date = rows[0].get("transaction_date")
+			so.transaction_date = rows[0].get("transaction_date")  # TODO: maybe getdate()
 			so.customer = customer
-			so.company = company
+			if len(requesting_companies) == 1:
+				so.multi_company_sales_order = True
+				so.company = settings.sales_order_aggregation_company
+			else:
+				so.company = requesting_company
 
 			for row in rows:
 				if not row.get("item_code"):
 					continue
 
-				so.append(
-					"items",
-					{
-						"item_code": row.get("item_code"),
-						"item_name": row.get("item_name"),
-						"delivery_date": row.get("transaction_date"),
-						"uom": row.get("uom"),
-						"qty": row.get("split_qty"),
-						"warehouse": warehouse,
-						"quotation_item": row.get("quotation_item"),
-						"prevdoc_docname": row.get("quotation"),
-					},
-				)
-			so.multi_company_sales_order = True
-			so.save()
-			counter += 1
-		else:
-			for quotation_company, _company_rows in groupby(rows, lambda x: x.get("company")):
-				rows = list(_company_rows)
-				so = frappe.new_doc("Sales Order")
-				so.transaction_date = rows[0].get("transaction_date")
-				so.customer = customer
-				so.company = quotation_company
-
-				for row in rows:
-					if not row.get("item_code"):
-						continue
+				if settings.sales_order_aggregation_company == so.company or so.company == row.company:
+					if (
+						settings.sales_order_aggregation_company == so.company
+						and settings.aggregated_sales_warehouse
+					):
+						warehouse = settings.aggregated_sales_warehouse
+					else:
+						warehouse = frappe.get_value("Quotation Item", row.quotation_item, "warehouse")
 
 					so.append(
 						"items",
@@ -183,12 +170,13 @@ def create(company, warehouse, filters, rows):
 							"delivery_date": row.get("transaction_date"),
 							"uom": row.get("uom"),
 							"qty": row.get("split_qty"),
-							"warehouse": row.get("warehouse"),
+							"warehouse": warehouse,
 							"quotation_item": row.get("quotation_item"),
 							"prevdoc_docname": row.get("quotation"),
 						},
 					)
-				so.save()
-				counter += 1
+
+			so.save()
+			counter += 1
 
 	frappe.msgprint(frappe._(f"{counter} Sales Orders created"), alert=True, indicator="green")

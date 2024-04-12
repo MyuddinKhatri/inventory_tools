@@ -96,9 +96,8 @@ async function select_all_customer_items(row, toggle) {
 
 async function create() {
 	let filters = frappe.query_report.get_filter_values()
-	values = await select_company()
-	company = values['company']
-	warehouse = values['warehouse']
+	company = await select_company()
+
 	let selected_rows = frappe.query_report.datatable.rowmanager.getCheckedRows()
 	let selected_items = frappe.query_report.datatable.datamanager.data.filter((row, index) => {
 		return selected_rows.includes(String(index)) && row.indent == 1 ? row : false
@@ -117,8 +116,7 @@ async function create() {
 	} else {
 		await frappe
 			.xcall('inventory_tools.inventory_tools.report.quotation_demand.quotation_demand.create', {
-				company: company || '',
-				warehouse: warehouse || '',
+				company: company,
 				filters: filters,
 				rows: selected_items,
 			})
@@ -136,40 +134,13 @@ async function select_company() {
 					fieldname: 'company',
 					label: 'Company',
 					options: 'Company',
-					reqd: 0,
-					description: __('Leave this field blank to disallow aggregation for this company'),
-					change: () => {
-						if (dialog.fields_dict.company.value) {
-							dialog.fields_dict.warehouse.df.hidden = 0
-							dialog.fields_dict.warehouse.df.reqd = 1
-						} else {
-							dialog.fields_dict.warehouse.df.hidden = 1
-							dialog.fields_dict.warehouse.df.reqd = 0
-						}
-						dialog.refresh()
-					},
-				},
-				{
-					fieldtype: 'Link',
-					fieldname: 'warehouse',
-					label: 'Warehouse',
-					options: 'Warehouse',
-					reqd: 0,
-					hidden: 1,
-					get_query: function () {
-						let company = dialog.get_value('company')
-						if (company) {
-							return {
-								filters: { company: company },
-							}
-						}
-					},
+					reqd: 1,
 				},
 			],
 			primary_action: () => {
 				let values = dialog.get_values()
 				dialog.hide()
-				return resolve(values)
+				return resolve(values.company)
 			},
 			primary_action_label: __('Select'),
 		})
