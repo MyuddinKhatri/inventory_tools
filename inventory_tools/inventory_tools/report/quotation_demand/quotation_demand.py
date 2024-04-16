@@ -141,14 +141,13 @@ def create(company, filters, rows):
 		for customer, _rows in groupby(rows, lambda x: x.get("customer")):
 			rows = list(_rows)
 			so = frappe.new_doc("Sales Order")
-			so.transaction_date = rows[0].get("transaction_date")  # TODO: maybe getdate()
+			so.transaction_date = rows[0].get("transaction_date")
 			so.customer = customer
-			if len(requesting_companies) == 1:
+			if settings.sales_order_aggregation_company and len(requesting_companies) == 1:
 				so.multi_company_sales_order = True
 				so.company = settings.sales_order_aggregation_company
 			else:
 				so.company = requesting_company
-
 			for row in rows:
 				if not row.get("item_code"):
 					continue
@@ -176,7 +175,8 @@ def create(company, filters, rows):
 						},
 					)
 
-			so.save()
-			counter += 1
+			if so.items:
+				so.save()
+				counter += 1
 
 	frappe.msgprint(frappe._(f"{counter} Sales Orders created"), alert=True, indicator="green")
