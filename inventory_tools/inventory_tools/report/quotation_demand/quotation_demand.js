@@ -96,8 +96,11 @@ async function select_all_customer_items(row, toggle) {
 
 async function create() {
 	let filters = frappe.query_report.get_filter_values()
-	company = await select_company()
-
+	if (!filters.company) {
+		company = await select_company()
+	} else {
+		company = filters.company
+	}
 	let selected_rows = frappe.query_report.datatable.rowmanager.getCheckedRows()
 	let selected_items = frappe.query_report.datatable.datamanager.data.filter((row, index) => {
 		return selected_rows.includes(String(index)) && row.indent == 1 ? row : false
