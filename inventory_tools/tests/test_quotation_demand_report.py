@@ -14,7 +14,9 @@ def test_report_without_aggregation():
 	assert len(rows) == 10
 	assert rows[1].get("customer") == "Almacs Food Group"
 
-	selected_rows = [row for row in rows if row.get("supplier") == "Almacs Food Group"]
+	selected_rows = [
+		row for row in rows if row.get("customer") == "Almacs Food Group" and row.get("company")
+	]
 
 	frappe.call(
 		"inventory_tools.inventory_tools.report.quotation_demand.quotation_demand.create",
@@ -47,7 +49,9 @@ def test_report_with_aggregation_and_no_aggregation_warehouse():
 	assert len(rows) == 10
 	assert rows[1].get("customer") == "Almacs Food Group"
 
-	selected_rows = [row for row in rows if row.get("customer") == "Almacs Food Group"]
+	selected_rows = [
+		row for row in rows if row.get("customer") == "Almacs Food Group" and row.get("company")
+	]
 
 	frappe.call(
 		"inventory_tools.inventory_tools.report.quotation_demand.quotation_demand.create",
@@ -66,23 +70,28 @@ def test_report_with_aggregation_and_no_aggregation_warehouse():
 	assert sos[0].customer == "Almacs Food Group"
 	assert sos[0].company == "Chelsea Fruit Co"
 	for so in sos:
+		for item in so.items:
+			quotation_wh = frappe.get_value("Quotation Item", item.quotation_item, "warehouse")
+			assert item.warehouse == quotation_wh
 		frappe.delete_doc("Sales Order", so.name)
 
 
 @pytest.mark.order(52)
 def test_report_with_aggregation_and_aggregation_warehouse():
 	settings = frappe.get_doc("Inventory Tools Settings", "Chelsea Fruit Co")
-	settings.purchase_order_aggregation_company = settings.name
-	settings.aggregated_purchasing_warehouse = "Stores - CFC"
+	settings.sales_order_aggregation_company = settings.name
+	settings.aggregated_sales_warehouse = "Stores - CFC"
 	settings.update_warehouse_path = True
 	settings.save()
 
 	filters = frappe._dict({"end_date": getdate()})
 	columns, rows = execute_quotation_demand(filters)
 	assert len(rows) == 10
-	assert rows[1].get("supplier") == "Almacs Food Group"
+	assert rows[1].get("customer") == "Almacs Food Group"
 
-	selected_rows = [row for row in rows if row.get("customer") == "Almacs Food Group"]
+	selected_rows = [
+		row for row in rows if row.get("customer") == "Almacs Food Group" and row.get("company")
+	]
 
 	frappe.call(
 		"inventory_tools.inventory_tools.report.quotation_demand.quotation_demand.create",
@@ -101,4 +110,6 @@ def test_report_with_aggregation_and_aggregation_warehouse():
 	assert sos[0].customer == "Almacs Food Group"
 	assert sos[0].company == "Chelsea Fruit Co"
 	for so in sos:
+		for item in so.items:
+			assert item.warehouse == "Stores - CFC"
 		frappe.delete_doc("Sales Order", so.name)
