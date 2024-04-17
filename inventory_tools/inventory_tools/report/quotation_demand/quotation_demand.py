@@ -6,6 +6,7 @@ from itertools import groupby
 
 import frappe
 from frappe.query_builder import DocType
+from frappe.utils.data import fmt_money
 
 
 def execute(filters=None):
@@ -25,6 +26,7 @@ def get_data(filters):
 			QuotationItem.name.as_("quotation_item"),
 			Quotation.name.as_("quotation"),
 			Quotation.company,
+			Quotation.currency,
 			Quotation.party_name.as_("customer"),
 			Quotation.transaction_date,
 			QuotationItem.item_code,
@@ -32,6 +34,8 @@ def get_data(filters):
 			QuotationItem.qty,
 			QuotationItem.uom,
 			QuotationItem.warehouse,
+			QuotationItem.rate,
+			QuotationItem.amount,
 		)
 		.where(Quotation.docstatus < 2)
 		.where(Quotation.quotation_to == "Customer")
@@ -51,7 +55,15 @@ def get_data(filters):
 		rows = list(_rows)
 		output.append({"customer": customer, "indent": 0})
 		for r in rows:
-			r["split_qty"] = r["qty"]
+			r.split_qty = r["qty"]
+			r.price = fmt_money(r.get("rate"), 2, r.get("currency")).replace(" ", "")
+			r.amount = fmt_money(r.get("amount"), 2, r.get("currency")).replace(" ", "")
+			r.draft_so = frappe.db.get_value(
+				"Sales Order Item",
+				{"quotation_item": r.quotation_item, "docstatus": 0},
+				"sum(qty) as qty",
+			)
+			r.draft_so = f'<span style="color: red">{r.draft_so}</span>' if r.draft_so else None
 			output.append({**r, "indent": 1})
 	return output
 
@@ -107,6 +119,20 @@ def get_columns():
 		},
 		{"fieldname": "item_name", "fieldtype": "Data", "hidden": 1},
 		{
+			"label": "Draft SOs",
+			"fieldname": "draft_so",
+			"fieldtype": "Data",
+			"width": "90px",
+			"align": "right",
+		},
+		{
+			"label": "Total Selected",
+			"fieldname": "total_selected",
+			"fieldtype": "Data",
+			"width": "90px",
+			"align": "right",
+		},
+		{
 			"label": "Qty",
 			"fieldname": "qty",
 			"fieldtype": "Data",
@@ -121,6 +147,21 @@ def get_columns():
 			"align": "right",
 		},
 		{"fieldname": "currency", "fieldtype": "Link", "options": "Currency", "hidden": 1},
+		{
+			"label": "Price",
+			"fieldname": "price",
+			"fieldtype": "Data",
+			"width": "90px",
+			"align": "right",
+		},
+		{"fieldname": "rate", "fieldtype": "Data", "hidden": 1},
+		{
+			"label": "Amount",
+			"fieldname": "amount",
+			"fieldtype": "Data",
+			"width": "90px",
+			"align": "right",
+		},
 	]
 
 
@@ -130,7 +171,7 @@ def create(company, filters, rows):
 	rows = [frappe._dict(r) for r in json.loads(rows)] if isinstance(rows, str) else rows
 	if not rows:
 		return
-
+	print(rows)
 	counter = 0
 	settings = frappe.get_doc("Inventory Tools Settings", company)
 	requesting_companies = list({row.company for row in rows})
@@ -169,6 +210,7 @@ def create(company, filters, rows):
 							"delivery_date": row.get("transaction_date"),
 							"uom": row.get("uom"),
 							"qty": row.get("split_qty"),
+							"rate": row.get("rate"),
 							"warehouse": warehouse,
 							"quotation_item": row.get("quotation_item"),
 							"prevdoc_docname": row.get("quotation"),

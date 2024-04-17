@@ -23,7 +23,7 @@ frappe.query_reports['Quotation Demand'] = {
 		},
 	],
 	on_report_render: reportview => {
-		reportview.datatable.options.columns[7].editable = true
+		reportview.datatable.options.columns[9].editable = true
 		reportview.render_datatable()
 		// these don't seem to be working
 		$(".btn-default:contains('Create Card')").addClass('hidden')
@@ -60,7 +60,7 @@ function manage_buttons(reportview) {
 }
 
 function update_selection(row) {
-	if (row !== undefined && !row[5].content) {
+	if (row !== undefined && !row[7].content) {
 		const toggle = frappe.query_report.datatable.rowmanager.checkMap[row[0].rowIndex]
 		select_all_customer_items(row, toggle)
 	}
@@ -111,7 +111,7 @@ async function create() {
 		return selected_rows.includes(String(index)) && row[0]['indent'] == 1 ? row : false
 	})
 	for (let i = 0; i < selected_items.length; i++) {
-		selected_items[i]['split_qty'] = selected_raw_rows[i][9].content
+		selected_items[i]['split_qty'] = selected_raw_rows[i][11].content
 	}
 
 	if (!selected_items.length) {
