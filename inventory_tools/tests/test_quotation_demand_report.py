@@ -27,12 +27,23 @@ def test_report_without_aggregation():
 		},
 	)
 
-	sos = frappe.get_all("Sales Order", {"docstatus": 0}, ["name", "customer", "company"])
+	sos = [
+		frappe.get_doc("Sales Order", so)
+		for so in frappe.get_all("Sales Order", {"docstatus": 0}, pluck="name")
+	]
 	assert "Donwtown Deli" not in [so.get("customer") for so in sos]
 	assert len(sos) == 2
-	assert len(list(filter(lambda d: d["company"] == "Chelsea Fruit Co", sos))) == 1
-	assert len(list(filter(lambda d: d["company"] == "Ambrosia Pie Company", sos))) == 1
+	assert len(list(filter(lambda d: d.company == "Chelsea Fruit Co", sos))) == 1
+	assert len(list(filter(lambda d: d.company == "Ambrosia Pie Company", sos))) == 1
 	for so in sos:
+		if so.company == "Almacs Food Group":
+			assert so.grand_total == flt(144.84, 2)
+		elif so.company == "Chelsea Fruit Co":
+			assert so.grand_total == flt(160.00, 2)
+
+		for item in so.items:
+			quotation_wh = frappe.get_value("Quotation Item", item.quotation_item, "warehouse")
+			assert item.warehouse == quotation_wh
 		frappe.delete_doc("Sales Order", so.name)
 
 
