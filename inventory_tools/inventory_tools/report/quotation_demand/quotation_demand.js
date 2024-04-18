@@ -62,8 +62,45 @@ function manage_buttons(reportview) {
 function update_selection(row) {
 	if (row !== undefined && !row[7].content) {
 		const toggle = frappe.query_report.datatable.rowmanager.checkMap[row[0].rowIndex]
-		select_all_customer_items(row, toggle)
+		select_all_customer_items(row, toggle).then(() => {
+			update_selected_qty()
+		})
+	} else {
+		update_selected_qty()
 	}
+}
+
+function update_selected_qty() {
+	// iterate all rows for selected items
+	let item_map = {}
+	frappe.query_report.datatable.datamanager.data.forEach((customer_row, index) => {
+		if (frappe.query_report.datatable.rowmanager.checkMap[index]) {
+			console.log(customer_row)
+			if (customer_row.item_code && !item_map[customer_row.item_code]) {
+				item_map[customer_row.item_code] = customer_row.qty
+			} else if (customer_row.item_code && item_map[customer_row.item_code]) {
+				item_map[customer_row.item_code] += customer_row.qty
+			}
+		}
+	})
+	frappe.query_report.datatable.datamanager.data.forEach((customer_row, index) => {
+		if (customer_row.item_code in item_map) {
+			let rate = Number(String(customer_row.rate).replace(/[^0-9\.-]+/g, ''))
+			let total_selected = item_map[customer_row.item_code]
+			let selected_price = item_map[customer_row.item_code] * (rate || 0)
+			selected_price = format_currency(selected_price, customer_row.currency, 2)
+			frappe.query_report.datatable.cellmanager.updateCell(9, index, total_selected, true)
+			frappe.query_report.datatable.cellmanager.updateCell(12, index, selected_price, true)
+		} else {
+			if (customer_row.quotation) {
+				// don't update indent 0 rows
+				let rate = Number(String(customer_row.rate).replace(/[^0-9\.-]+/g, ''))
+				selected_price = format_currency(rate, customer_row.currency, 2)
+				frappe.query_report.datatable.cellmanager.updateCell(9, index, '', true)
+				frappe.query_report.datatable.cellmanager.updateCell(12, index, selected_price, true)
+			}
+		}
+	})
 }
 
 async function select_all_customer_items(row, toggle) {

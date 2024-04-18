@@ -35,7 +35,6 @@ def get_data(filters):
 			QuotationItem.uom,
 			QuotationItem.warehouse,
 			QuotationItem.rate,
-			QuotationItem.amount,
 		)
 		.where(Quotation.docstatus < 2)
 		.where(Quotation.quotation_to == "Customer")
@@ -57,7 +56,6 @@ def get_data(filters):
 		for r in rows:
 			r.split_qty = r["qty"]
 			r.price = fmt_money(r.get("rate"), 2, r.get("currency")).replace(" ", "")
-			r.amount = fmt_money(r.get("amount"), 2, r.get("currency")).replace(" ", "")
 			r.draft_so = frappe.db.get_value(
 				"Sales Order Item",
 				{"quotation_item": r.quotation_item, "docstatus": 0},
@@ -83,7 +81,7 @@ def get_columns():
 			"fieldtype": "Link",
 			"options": "Quotation",
 			"label": "Quotation",
-			"width": "200px",
+			"width": "170px",
 		},
 		{
 			"fieldname": "company",
@@ -96,7 +94,7 @@ def get_columns():
 			"fieldname": "transaction_date",
 			"label": "Date",
 			"fieldtype": "Date",
-			"width": "120px",
+			"width": "100px",
 		},
 		{
 			"fieldname": "quotation_item",
@@ -136,14 +134,14 @@ def get_columns():
 			"label": "Qty",
 			"fieldname": "qty",
 			"fieldtype": "Data",
-			"width": "90px",
+			"width": "50px",
 			"align": "right",
 		},
 		{
 			"label": "Split Qty",
 			"fieldname": "split_qty",
 			"fieldtype": "Data",
-			"width": "90px",
+			"width": "70px",
 			"align": "right",
 		},
 		{"fieldname": "currency", "fieldtype": "Link", "options": "Currency", "hidden": 1},
@@ -155,13 +153,6 @@ def get_columns():
 			"align": "right",
 		},
 		{"fieldname": "rate", "fieldtype": "Data", "hidden": 1},
-		{
-			"label": "Amount",
-			"fieldname": "amount",
-			"fieldtype": "Data",
-			"width": "90px",
-			"align": "right",
-		},
 	]
 
 
