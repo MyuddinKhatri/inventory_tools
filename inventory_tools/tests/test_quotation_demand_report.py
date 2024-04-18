@@ -78,13 +78,14 @@ def test_report_with_aggregation_and_no_aggregation_warehouse():
 		for so in frappe.get_all("Sales Order", {"docstatus": 0}, pluck="name")
 	]
 	assert len(sos) == 1
-	assert sos[0].customer == "Almacs Food Group"
-	assert sos[0].company == "Chelsea Fruit Co"
-	for so in sos:
-		for item in so.items:
-			quotation_wh = frappe.get_value("Quotation Item", item.quotation_item, "warehouse")
-			assert item.warehouse == quotation_wh
-		frappe.delete_doc("Sales Order", so.name)
+	so = sos[0]
+	assert so.customer == "Almacs Food Group"
+	assert so.company == "Chelsea Fruit Co"
+	assert so.grand_total == flt(304.84, 2)
+	for item in so.items:
+		quotation_wh = frappe.get_value("Quotation Item", item.quotation_item, "warehouse")
+		assert item.warehouse == quotation_wh
+	frappe.delete_doc("Sales Order", so.name)
 
 
 @pytest.mark.order(52)
@@ -118,9 +119,10 @@ def test_report_with_aggregation_and_aggregation_warehouse():
 		for so in frappe.get_all("Sales Order", {"docstatus": 0}, pluck="name")
 	]
 	assert len(sos) == 1
-	assert sos[0].customer == "Almacs Food Group"
-	assert sos[0].company == "Chelsea Fruit Co"
-	for so in sos:
-		for item in so.items:
-			assert item.warehouse == "Stores - CFC"
-		frappe.delete_doc("Sales Order", so.name)
+	so = sos[0]
+	assert so.customer == "Almacs Food Group"
+	assert so.company == "Chelsea Fruit Co"
+	assert so.grand_total == flt(304.84, 2)
+	for item in so.items:
+		assert item.warehouse == "Stores - CFC"
+	frappe.delete_doc("Sales Order", so.name)
