@@ -35,9 +35,9 @@ function addRow() {
     rowDivContainer[0].appendChild(newRowDiv);
 }
 
-function createQuote(isPastedString) {
+function createQuote(deserialized) {
     let quote_data = "";
-    if (isPastedString) {
+    if (deserialized) {
         quote_data = document.getElementById("bulk_paste").value;
     } else {
         // Get all input-rows and iterate through each to capture value
@@ -59,7 +59,7 @@ function createQuote(isPastedString) {
         type: "POST",
         args: {
             "quote_data": quote_data,
-            "is_processed": isPastedString
+            "deserialized": deserialized
         },
         freeze: true,
         freeze_message: "Adding to Shopping Cart...",
@@ -71,9 +71,9 @@ function createQuote(isPastedString) {
 }
 
 function toggleCards() {
-    var lineOrder = document.getElementById("line-by-line-order");
-    var bulkOrder = document.getElementById("bulk-order");
-    var orderType = document.getElementById("order-type-button");
+    const lineOrder = document.getElementById("line-by-line-order");
+    const bulkOrder = document.getElementById("bulk-order");
+    const orderType = document.getElementById("order-type-button");
 
     if (lineOrder.style.display === "none") {
         lineOrder.style.display = "block";
