@@ -2,35 +2,17 @@
 
 {% block page_content %}
 
-<script src="bulk-order.js"></script>
-
 <div class="text-center login-content container">
     <h3 class="form-signin-heading mt-4 mb-4">Bulk Order</h3>
-    <div style="display: block;" id="line-by-line-order">
-        <div class="input-row-container">
-            <div class="form-group data-row row ml-5 grid-field input-row">
-                <input type="text" id="sku_1" class="form-control col col-xs-6" placeholder="SKU 1" required autofocus>
-                &nbsp;
-                <input type="Number" id="qty_1" min="0" class="form-control col col-xs-4" placeholder="Quantity 1"
-                    required>
-            </div>
-        </div>
-        <button class="btn btn-sm mt-2 btn-secondary grid-add-row w-40" onclick="addRow()">Add Row</button>&nbsp;
-        <button class="btn btn-primary mt-2 btn-sm btn-complete-signup w-60" onclick="createQuote()">
-            Add to Quote</button>
-    </div>
-
-    <div id="bulk-order" style="display: none;">
-        <div class="input-row-container">
+    <form class="form-signin form-forgot" role="form" action="/api/method/inventory_tools.www.bulk_order.create_quotation">
             <div class="form-group data-row row ml-5 grid-field">
-                <textarea id="bulk_paste" class="form-control col col-xs-11" placeholder="Paste your bulk order here..."
-                    required>Paste your bulk order here...</textarea>
+                <textarea name="bulk_paste" class="form-control col col-xs-11" placeholder="Paste your bulk order here..."
+                    title="Please separate SKU and Quantity by using tab and use new line to add multiple SKUs"
+                    required></textarea>
             </div>
-        </div>
-        <button class="btn btn-primary mt-2 btn-sm btn-complete-signup w-60" onclick="createQuote(true)">
-            Add to Quote</button>
-    </div>
-    <button id="order-type-button" class="switch-mode-link" onclick="toggleCards()"> Paste products and quantities
+        <button class="btn btn-primary mt-2 btn-sm w-60" type="submit">Add to Quote</button>
+        </form>
+    <button class="switch-mode-link" onclick='location.href="/all-products"'> Select product one-by-one
     </button>
 </div>
 
