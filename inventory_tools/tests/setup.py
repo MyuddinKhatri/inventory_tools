@@ -98,7 +98,6 @@ def create_test_data():
 	create_suppliers(settings)
 	create_customers(settings)
 	create_items(settings)
-	create_specifications(settings)
 	create_boms(settings)
 	prod_plan_from_doc = "Sales Order"
 	if prod_plan_from_doc == "Sales Order":
@@ -107,6 +106,7 @@ def create_test_data():
 		create_material_request(settings)
 	create_production_plan(settings, prod_plan_from_doc)
 	create_fruit_material_request(settings)
+	create_specifications(settings)
 
 
 def create_suppliers(settings):
@@ -719,5 +719,7 @@ def create_specifications(settings=None):
 
 		spec_items = frappe.get_all("Item", {"item_group": "Baked Goods"})
 		for spec_item in spec_items:
+			if spec_item.name not in attributes:
+				continue
 			spec_item = frappe.get_doc("Item", spec_item)
 			s.create_linked_values(spec_item, attributes[spec_item.name])
