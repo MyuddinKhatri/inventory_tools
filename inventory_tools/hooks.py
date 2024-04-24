@@ -32,8 +32,11 @@ web_include_js = ["faceted_search.bundle.js"]
 # include js in doctype views
 doctype_js = {
 	"Item": "public/js/custom/item_custom.js",
+	"Job Card": "public/js/custom/job_card_custom.js",
+	"Operation": "public/js/custom/operation_custom.js",
 	"Purchase Invoice": "public/js/custom/purchase_invoice_custom.js",
 	"Purchase Order": "public/js/custom/purchase_order_custom.js",
+	"Stock Entry": "public/js/custom/stock_entry_custom.js",
 	"Work Order": "public/js/custom/work_order_custom.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -112,6 +115,8 @@ override_doctype_class = {
 	"Purchase Order": "inventory_tools.inventory_tools.overrides.purchase_order.InventoryToolsPurchaseOrder",
 	"Purchase Receipt": "inventory_tools.inventory_tools.overrides.purchase_receipt.InventoryToolsPurchaseReceipt",
 	"Production Plan": "inventory_tools.inventory_tools.overrides.production_plan.InventoryToolsProductionPlan",
+	"Stock Entry": "inventory_tools.inventory_tools.overrides.stock_entry.InventoryToolsStockEntry",
+	"Job Card": "inventory_tools.inventory_tools.overrides.job_card.InventoryToolsJobCard",
 }
 
 
@@ -139,6 +144,11 @@ doc_events = {
 	},
 	"Warehouse": {
 		"validate": ["inventory_tools.inventory_tools.overrides.warehouse.update_warehouse_path"]
+	},
+	"Operation": {
+		"validate": [
+			"inventory_tools.inventory_tools.overrides.operation.validate_alternative_workstation"
+		]
 	},
 }
 
