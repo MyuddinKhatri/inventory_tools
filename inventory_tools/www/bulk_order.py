@@ -5,13 +5,15 @@ from erpnext.e_commerce.shopping_cart.cart import update_cart
 def get_context(context):
 	pass
 
+
 @frappe.whitelist()
 def create_quotation(bulk_paste: str):
 	"""
-	This function is for bulk orders: 
-	agrs:
-		bulk_paste: string that contains item(s) and quantity(ies)
+	This function is for bulk orders:
+
+	:param bulk_paste: string that contains item(s) and quantity(ies)
 	"""
+
 	if bulk_paste:
 		bulk_paste.strip()
 		for line_item in bulk_paste.split("\n"):
