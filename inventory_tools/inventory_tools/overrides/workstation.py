@@ -31,6 +31,7 @@ def get_alternative_workstations(doctype, txt, searchfield, start, page_len, fil
 	if not frappe.get_cached_value(
 		"Inventory Tools Settings", company, "allow_alternative_workstations"
 	):
+		print("this one?")
 		return execute(
 			"Workstation",
 			filters=filters,
