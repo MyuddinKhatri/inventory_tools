@@ -43,7 +43,7 @@ def get_alternative_workstations(doctype, txt, searchfield, start, page_len, fil
 		"""
 		Select aw.workstation, ws.workstation_type, ws.description
 		From `tabOperation` as op
-		Left Join `tabAlternative Workstations` as aw ON aw.parent = op.name
+		Left Join `tabAlternative Workstation` as aw ON aw.parent = op.name
 		Left Join `tabWorkstation` as ws ON ws.name = aw.workstation
 		Where op.name = '{operation}' {conditions}
 	""".format(
