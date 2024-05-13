@@ -32,5 +32,6 @@ def test_alternative_workstation_query():
 		},
 	)
 	assert len(frappe.response.results) == 2
-	assert frappe.response.results[0].get("value") == "Food Prep Table 2"
-	assert frappe.response.results[1].get("value") == "Food Prep Table 1"
+	assert frappe.response.results[0].get("value") == "Food Prep Table 1"  # default returns first
+	assert "Default" in frappe.response.results[0].get("description")
+	assert frappe.response.results[1].get("value") == "Food Prep Table 2"

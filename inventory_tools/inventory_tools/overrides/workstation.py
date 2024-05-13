@@ -25,13 +25,13 @@ from frappe.desk.search import search_link
 
 
 @frappe.whitelist()
+@frappe.read_only()
 @frappe.validate_and_sanitize_search_inputs
 def get_alternative_workstations(doctype, txt, searchfield, start, page_len, filters):
 	company = filters.get("company") or frappe.defaults.get_defaults().get("company")
 	if not frappe.get_cached_value(
 		"Inventory Tools Settings", company, "allow_alternative_workstations"
 	):
-		print("this one?")
 		return execute(
 			"Workstation",
 			filters=filters,
@@ -45,33 +45,32 @@ def get_alternative_workstations(doctype, txt, searchfield, start, page_len, fil
 	if not operation:
 		frappe.throw("Please select a Operation first.")
 
-	if txt:
-		searchfields = frappe.get_meta(doctype).get_search_fields()
-		searchfields = " or ".join(["ws." + field + f" LIKE '%{txt}%'" for field in searchfields])
-
-	conditions = ""
-	if txt and searchfields:
-		conditions = f"AND ({searchfields})"
+	searchfields = list(reversed(frappe.get_meta(doctype).get_search_fields()))
+	select = ",\n".join([f"`tabWorkstation`.{field}" for field in searchfields])
+	search_text = "AND `tabAlternative Workstation`.workstation LIKE %(txt)s" if txt else ""
 
 	workstation = frappe.db.sql(
 		f"""
-		SELECT `tabAlternative Workstation`.workstation, `tabWorkstation`.workstation_type, `tabWorkstation`.description
+		SELECT DISTINCT {select}
 		FROM `tabOperation`, `tabWorkstation`, `tabAlternative Workstation`
-		WHERE `tabOperation`.name = %(operation)s 
-		AND `tabAlternative Workstation`.parent = `tabOperation`.name
-		AND `tabWorkstation`.name = `tabAlternative Workstation`.workstation
-		{conditions}
+		WHERE `tabWorkstation`.name = `tabAlternative Workstation`.workstation
+		AND `tabAlternative Workstation`.parent = %(operation)s
+		{search_text}
 	""",
-		{"operation": operation},
-		debug=True,
+		{"operation": operation, "txt": f"%{txt}%"},
+		as_list=True,
 	)
 
-	default_workstation = frappe.db.get_value("Operation", operation, "workstation")
-	flag = True
-	for row in workstation:
-		if row[0] == None:
-			workstation = ((default_workstation,),)
-			flag = False
-	if flag:
-		workstation += ((default_workstation,),)
+	default_workstation_name = frappe.db.get_value("Operation", operation, "workstation")
+	default_workstation_fields = frappe.db.get_values(
+		"Workstation", default_workstation_name, searchfields, as_dict=True
+	)
+	if default_workstation_name not in [row[0] for row in workstation]:
+		_default = tuple(
+			[
+				default_workstation_fields[0].name,
+				f"{frappe.bold('Default')} - {','.join([v for k, v in default_workstation_fields[0].items() if k != 'name'])}",
+			]
+		)
+		workstation.insert(0, _default)
 	return workstation
