@@ -4,10 +4,22 @@ import pytest
 
 @pytest.mark.order(45)
 def test_alternative_workstation_query():
+	# test default settings
+	frappe.call(
+		"frappe.desk.search.search_link",
+		**{
+			"doctype": "Workstation",
+			"txt": "",
+			"reference_doctype": "Job Card",
+		},
+	)
+	assert len(frappe.response.results) == 16  # all workstations
+
+	# test with inventory tools settings
 	inventory_tools_settings = frappe.get_doc(
 		"Inventory Tools Settings", frappe.defaults.get_defaults().get("company")
 	)
-	inventory_tools_settings.enforce_uoms = True
+	inventory_tools_settings.allow_alternative_workstations = True
 	inventory_tools_settings.save()
 	frappe.call(
 		"frappe.desk.search.search_link",

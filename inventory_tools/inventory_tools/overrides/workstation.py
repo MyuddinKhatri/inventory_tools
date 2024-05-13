@@ -1,6 +1,6 @@
-import json
-
 import frappe
+from frappe.desk.reportview import execute
+from frappe.desk.search import search_link
 
 """
 	This function fetch workstation of the document operation.
@@ -27,6 +27,19 @@ import frappe
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_alternative_workstations(doctype, txt, searchfield, start, page_len, filters):
+	company = filters.get("company") or frappe.defaults.get_defaults().get("company")
+	if not frappe.get_cached_value(
+		"Inventory Tools Settings", company, "allow_alternative_workstations"
+	):
+		return execute(
+			"Workstation",
+			filters=filters,
+			fields=[searchfield],
+			limit_start=start,
+			limit_page_length=page_len,
+			as_list=True,
+		)
+
 	operation = filters.get("operation")
 	if not operation:
 		frappe.throw("Please select a Operation first.")
@@ -37,18 +50,19 @@ def get_alternative_workstations(doctype, txt, searchfield, start, page_len, fil
 
 	conditions = ""
 	if txt and searchfields:
-		conditions = f"and ({searchfields})"
+		conditions = f"AND ({searchfields})"
 
 	workstation = frappe.db.sql(
-		"""
-		Select aw.workstation, ws.workstation_type, ws.description
-		From `tabOperation` as op
-		Left Join `tabAlternative Workstation` as aw ON aw.parent = op.name
-		Left Join `tabWorkstation` as ws ON ws.name = aw.workstation
-		Where op.name = '{operation}' {conditions}
-	""".format(
-			conditions=conditions, operation=operation
-		)
+		f"""
+		SELECT `tabAlternative Workstation`.workstation, `tabWorkstation`.workstation_type, `tabWorkstation`.description
+		FROM `tabOperation`, `tabWorkstation`, `tabAlternative Workstation`
+		WHERE `tabOperation`.name = %(operation)s 
+		AND `tabAlternative Workstation`.parent = `tabOperation`.name
+		AND `tabWorkstation`.name = `tabAlternative Workstation`.workstation
+		{conditions}
+	""",
+		{"operation": operation},
+		debug=True,
 	)
 
 	default_workstation = frappe.db.get_value("Operation", operation, "workstation")
