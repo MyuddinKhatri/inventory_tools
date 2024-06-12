@@ -34,10 +34,11 @@ def db_instance():
 	currentsite = "test_site"
 	sites = Path(get_bench_path()) / "sites"
 	if (sites / "common_site_config.json").is_file():
-		currentsite = json.loads((sites / "common_site_config.json").read_text()).get("default_site")
+		currentsite = json.loads((sites / "common_site_config.json").read_text()).get(
+			"default_site"
+		)
 
 	frappe.init(site=currentsite, sites_path=sites)
 	frappe.connect()
 	frappe.db.commit = MagicMock()
 	yield frappe.db
-
